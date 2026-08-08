@@ -31,5 +31,40 @@
     "title": "Atomic Habits",
     "author": "James Clear",
     "available": true
+  },
+  {
+    "id": 5,
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "year": 1925,
+    "available": true
+  },
+  {
+    "id": 6,
+    "title": "The God of war",
+    "author": "Scott Meyer",
+    "year": 1905,
+    "available": true
+  },
+  {
+    "id": 7,
+    "title": "Assasins Creed",
+    "author": "Ubisoft",
+    "year": 2000,
+    "available": true
+  },
+  {
+    "id": 8,
+    "title": "Assasins Creed",
+    "author": "Ubisoft",
+    "year": 2000,
+    "available": true
+  },
+  {
+    "id": 9,
+    "title": "Assasins Creed",
+    "author": "Ubisoft",
+    "year": 2000,
+    "available": true
   }
 ]
