@@ -1,0 +1,10 @@
+{
+  "name": "readit-js",
+  "version": "1.0.0",
+  "description": "ReadIt library management system built with JS",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js"
+  }
+  
+}
