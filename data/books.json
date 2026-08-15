@@ -14,7 +14,8 @@
   {
     "id": 3,
     "title": "Welcome Home",
-    "author": "F. Michael"
+    "author": "F. Michael",
+    "available": true
   },
   {
     "id": 3,
