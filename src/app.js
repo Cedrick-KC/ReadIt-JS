@@ -1,4 +1,13 @@
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import fs from "node:fs/promises";
+
+// Creating interface for user input 
+const rl = readline.createInterface({
+    input,
+    output
+});
+
 
 async function loadBooks() {
     const data = await fs.readFile("../data/books.json", "utf-8");
@@ -233,12 +242,120 @@ return report;
 //const overdueBooks = await getOverdueBooks();
 //console.log("Overdue Books:", overdueBooks);
 //await getOverdueReport();
-console.log("==============READ IT JS==============");
-console.log("Welcome to the Read It JS Library Management System!");
-console.log("======================================");
-console.log("Available commands:");
-console.log("1. addBook(title, author, year)");
-console.log("2. deleteBook(id)");
-console.log("3. borrowBook(bookId, memberId)");
-console.log("4. returnBook(bookId, memberId)");
-console.log("5. getOverdueReport()");
+ let running = true;
+
+function showMenu() {
+    console.log(`
+========================================
+           📚 READIT LIBRARY
+========================================
+
+1. View all books
+2. Add a book
+3. Find a book
+4. Update a book
+5. Delete a book
+
+6. Add member
+7. View members
+
+8. Borrow a book
+9. Return a book
+
+10. View overdue books
+
+0. Exit
+
+========================================
+`);
+}
+while(running){
+    showMenu();
+   await startApp();
+}
+
+
+async function startApp() {
+    const choice = await rl.question("Choose an option: ");
+
+    switch (choice) {
+        case "1":
+            console.log("You chose View all books.");
+            const books = await loadBooks();
+            console.table(books);
+            break;
+
+        case "2":
+            console.log("You chose Add a book.");
+            const ti = await rl.question("Enter the title of the book: ");
+            const au = await rl.question("Enter the author of the book: ");
+            const yy = await rl.question("Enter the year of the publishing the book: ");
+            await addBook(ti, au, yy);
+            break;
+
+         case "3":
+            console.log("You chose View a book.");
+            const bookid = Number(await rl.question("Enter the id of the book: "));
+            
+            await getBookById(bookid);
+            break;   
+        
+         case "4":
+            console.log("You chose update a book.");
+            const bokid = Number(await rl.question("Enter the id of the book: "));
+            const chnges = Number(await rl.question("Enter the changes to the book: "));
+            await updateBook(bokid, chnges);
+            break;      
+        
+         case "5":
+            console.log("You chose Delete a book.");
+            const bkid = Number(await rl.question("Enter the id of the book: "));
+            
+            await deleteBook(bkid);
+            break; 
+         
+         case "6":
+            console.log("You chose Add a member.");
+            const name = await rl.question("Enter the name ofthe member: ");
+            const mail = await rl.question("Enter the email of the member: ");
+            
+            await addMember(name, mail);
+            break; 
+         
+         case "7":
+            console.log("You chose View all members.");
+            const members = await loadMembers();
+            console.table(members);
+            break;    
+
+        case "8":
+            console.log("You chose Borrow a book.");
+            const bid = Number(await rl.question("Enter the ID of the book: "));
+            const mid = Number(await rl.question("Enter your ReadIT member id of the book: "));
+            await borrowBook(bid, mid);
+            break;
+
+        case "9":
+            console.log("You chose Return a book.");
+            const bbid = Number(await rl.question("Enter the ID of the book: "));
+            const mmid = Number(await rl.question("Enter your ReadIT member id of the book: "));
+            await returnBook(bbid, mmid);
+            break;
+
+        case "10":
+            console.log("You chose Overdue books.");
+            await getOverdueBooks();
+            break;
+
+        case "0":
+            console.log("Goodbye!");
+            rl.close();
+            running = false;
+            return;
+
+        default:
+            console.log("Invalid option.");
+            break;
+    }
+}
+rl.close();
