@@ -7,7 +7,10 @@ const rl = readline.createInterface({
     input,
     output
 });
-
+// ID generator
+function generateId(items) {
+    return Math.max(0, ...items.map(item => item.id)) + 1;
+}
 
 async function loadBooks() {
     const data = await fs.readFile("../data/books.json", "utf-8");
@@ -16,7 +19,7 @@ async function loadBooks() {
 async function addBook(title, author, year) {
     const books = await loadBooks();
     const newBook = {
-        id: Math.max(0, ...books.map(b => b.id)) + 1,
+        id: generateId(books),
         title: title,
         author: author,
         year: year,
@@ -88,10 +91,6 @@ async function borrowBook(id, memberId) {
         console.log("We don't have that book");
         return;
     };
-    if(book.available === false){
-        console.log("Sorry! That book was already borrowed.");
-        return;
-    };
     const members = await loadMembers();
 
 const member = members.find(member => member.id === memberId);
@@ -104,8 +103,18 @@ if (!member) {
         const dueDate = new Date(borrowedAt);
         dueDate.setDate(dueDate.getDate() + 7);
         const transactions = await loadTransactions();
+        const activeTransaction = transactions.find(
+    transaction =>
+        transaction.bookId === id &&
+        transaction.returnedAt === null
+);
+
+if (activeTransaction) {
+    console.log("This book already has an active borrowing transaction.");
+    return;
+}
         const transaction = {
-    id: Math.max(0, ...transactions.map(t => t.id)) + 1,
+    id: generateId(transactions),
     bookId: id,
     memberId,
     borrowedAt: borrowedAt.toISOString(),
@@ -133,8 +142,13 @@ async function saveMembers(members) {
 
 async function addMember(name, email) {
    const members = await loadMembers();
+   const mailCheck = await emailExists(email);
+   if (mailCheck){
+    console.log("This email is already registered on ReadIt");
+    return;
+   }
    const newMember = {
-    id: Math.max(0, ...members.map(b => b.id)) + 1,
+    id: generateId(members),
     name: name,
     email: email
    };
@@ -276,7 +290,7 @@ while(running){
 
 
 async function startApp() {
-    const choice = await rl.question("Choose an option: ");
+    const choice = await askText("Choose an option: ");
 
     switch (choice) {
         case "1":
@@ -287,37 +301,98 @@ async function startApp() {
 
         case "2":
             console.log("You chose Add a book.");
-            const ti = await rl.question("Enter the title of the book: ");
-            const au = await rl.question("Enter the author of the book: ");
-            const yy = await rl.question("Enter the year of the publishing the book: ");
+            const ti = await askText("Enter the title of the book: ");
+            const au = await askText("Enter the author of the book: ");
+            const yy = await askNumber("Enter the year of the publishing the book: ", 1000,
+                new Date().getFullYear()
+            );
             await addBook(ti, au, yy);
             break;
 
          case "3":
             console.log("You chose View a book.");
-            const bookid = Number(await rl.question("Enter the id of the book: "));
+            const bookid = await askNumber("Enter the id of the book: ", 1, Infinity);
             
             await getBookById(bookid);
             break;   
         
          case "4":
-            console.log("You chose update a book.");
-            const bokid = Number(await rl.question("Enter the id of the book: "));
-            const chnges = Number(await rl.question("Enter the changes to the book: "));
-            await updateBook(bokid, chnges);
-            break;      
+    console.log("You chose update a book.");
+
+    const bookId = await askNumber("Enter the ID of the book: ", 1, Infinity);
+
+    console.log(`
+What do you want to update?
+
+a) Title
+b) Author
+c) Year
+d) Cancel
+`);
+
+    const updateChoice = await askText("Choose an option: ");
+
+    switch (updateChoice) {
+
+        case "a": {
+            const newTitle = await askText(
+                "Enter the new title to give the book: "
+            );
+
+            const changes = {
+                title: newTitle
+            };
+
+            await updateBook(bookId, changes);
+            break;
+        }
+
+        case "b": {
+            const newAuthor = await askText(
+                "Enter the author name of the book: "
+            );
+
+            const changes = {
+                author: newAuthor
+            };
+
+            await updateBook(bookId, changes);
+            break;
+        }
+
+        case "c": {
+            const newYear = await askNumber("Enter the year of the book: ", 1000, newDate().geFullYear());
+
+            const changes = {
+                year: newYear
+            };
+
+            await updateBook(bookId, changes);
+            break;
+        }
+
+        case "d":
+            console.log("Update cancelled.");
+            break;
+
+        default:
+            console.log("Sorry! That option is not available.");
+            break;
+    }
+
+    break;
         
          case "5":
             console.log("You chose Delete a book.");
-            const bkid = Number(await rl.question("Enter the id of the book: "));
+            const bkid = await askNumber("Enter the id of the book: ", 1, Infinity);
             
             await deleteBook(bkid);
             break; 
          
          case "6":
             console.log("You chose Add a member.");
-            const name = await rl.question("Enter the name ofthe member: ");
-            const mail = await rl.question("Enter the email of the member: ");
+            const name = await askText("Enter the name ofthe member: ");
+            const mail = await askEmail("Enter the email of the member: ");
             
             await addMember(name, mail);
             break; 
@@ -330,15 +405,15 @@ async function startApp() {
 
         case "8":
             console.log("You chose Borrow a book.");
-            const bid = Number(await rl.question("Enter the ID of the book: "));
-            const mid = Number(await rl.question("Enter your ReadIT member id of the book: "));
+            const bid = await askNumber("Enter the ID of the book: ", 1, Infinity);
+            const mid = await askNumber("Enter your ReadIT member id of the book: ", 1, Infinity);
             await borrowBook(bid, mid);
             break;
 
         case "9":
             console.log("You chose Return a book.");
-            const bbid = Number(await rl.question("Enter the ID of the book: "));
-            const mmid = Number(await rl.question("Enter your ReadIT member id of the book: "));
+            const bbid = await askNumber("Enter the ID of the book: ", 1, Infinity);
+            const mmid = await askNumber("Enter your ReadIT member id of the book: ", 1, Infinity);
             await returnBook(bbid, mmid);
             break;
 
@@ -359,3 +434,58 @@ async function startApp() {
     }
 }
 rl.close();
+//input validation
+async function askNumber(question, min, max) {
+    while (true) {
+        const answer = await rl.question(question);
+
+        if (answer.trim() === "") {
+            console.log("Please enter a number.");
+            continue;
+        }
+
+        const number = Number(answer);
+
+        if (
+            !Number.isNaN(number) &&
+            number >= min &&
+            number <= max
+        ) {
+            return number;
+        }
+
+        console.log(`Please enter a number between ${min} and ${max}.`);
+    }
+}
+async function askText(question) {
+    while (true) {
+        const answer = await rl.question(question);
+
+        if (answer.trim() !== "") {
+            return answer.trim();
+        }
+
+        console.log("This field cannot be empty.");
+    }
+}async function askEmail(question) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    while (true) {
+        const email = await rl.question(question);
+
+        if (emailPattern.test(email.trim())) {
+            return email.trim();
+        }
+
+        console.log("Please enter a valid email address.");
+    }
+}
+async function emailExists(email) {
+    const members = await loadMembers();
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    return members.some(member =>
+        member.email.trim().toLowerCase() === normalizedEmail
+    );
+}
