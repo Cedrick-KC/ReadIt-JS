@@ -1,0 +1,322 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Enums
+enum Role {
+  READER
+  CREATOR
+  MODERATOR
+  ADMIN
+}
+
+enum ContentType {
+  BOOK
+  ARTICLE
+  ESSAY
+  SHORT_STORY
+  POETRY
+  RESEARCH
+  GUIDE
+  OTHER
+}
+
+enum WorkStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum InvolvementType {
+  FULLY_AI_GENERATED
+  AI_ASSISTED
+  HUMAN_WITH_AI_EDITING
+  HUMAN_WRITTEN
+}
+
+// User model
+model User {
+  id           String   @id @default(uuid())
+  name         String?
+  email        String   @unique
+  passwordHash String?
+  avatar       String?
+  bio          String?
+  role         Role     @default(READER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  submissions          Submission[]      @relation("UserSubmissions")
+  moderatedSubmissions Submission[]      @relation("UserModeratedSubmissions")
+  collections          Collection[]
+  createdWorks         Work[]
+  reviews              Review[]
+  followers            Follow[]          @relation("UserFollowers")
+  following            Follow[]          @relation("UserFollowing")
+  highlights           Highlight[]
+  notes                Note[]
+  readingProgress      ReadingProgress[]
+  bookmarks            Bookmark[]
+  reports              Report[]
+}
+
+// Work model (books/articles/other written works)
+model Work {
+  id          String      @id @default(uuid())
+  title       String
+  subtitle    String?
+  slug        String      @unique
+  description String?
+  contentType ContentType
+  coverUrl    String?
+  status      WorkStatus  @default(DRAFT)
+  language    String      @default("en")
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  creatorId       String
+  creator         User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  aiProvenance    AIProvenance?
+  tags            Tag[]             @relation("WorkTags")
+  categories      Category[]        @relation("WorkCategories")
+  collections     CollectionItem[]
+  reviews         Review[]
+  highlights      Highlight[]
+  notes           Note[]
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  reports         Report[]
+  submissions     Submission[]
+}
+
+// AI Provenance model
+model AIProvenance {
+  id              String          @id @default(uuid())
+  workId          String          @unique
+  provider        String
+  model           String
+  modelVersion    String?
+  involvementType InvolvementType
+  humanEdited     Boolean         @default(false)
+  humanEditor     String?
+  generationDate  DateTime?
+  disclosure      String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+}
+
+// Tag model
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  // Relations
+  works Work[] @relation("WorkTags")
+}
+
+// Category model
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  parentId    String? // For nested categories
+  createdAt   DateTime @default(now())
+
+  // Relations
+  parent   Category?  @relation("Category", fields: [parentId], references: [id])
+  children Category[] @relation("Category")
+  works    Work[]     @relation("WorkCategories")
+}
+
+// Collection model
+model Collection {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  coverUrl    String?
+  visibility  String   @default("private") // "private" | "public"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userId String
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  CollectionItem[]
+}
+
+// CollectionItem model
+model CollectionItem {
+  collectionId String
+  workId       String
+  position     Int
+  createdAt    DateTime @default(now())
+
+  // Relations
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  work       Work       @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, workId])
+}
+
+// Review model
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int // 1-5
+  title     String?
+  content   String?
+  status    String   @default("pending") // "pending" | "approved" | "rejected"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workId  String
+  work    Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  reports Report[]
+}
+
+// Follow model
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+}
+
+// ReadingProgress model
+model ReadingProgress {
+  userId     String
+  workId     String
+  chapterId  String?
+  position   Int // percentage (0-100)
+  percentage Int // calculated percentage
+  lastReadAt DateTime @default(now())
+  completed  Boolean  @default(false)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@id([userId, workId])
+}
+
+// Bookmark model
+model Bookmark {
+  userId    String
+  workId    String
+  chapterId String?
+  position  Int // percentage position
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@id([userId, workId])
+}
+
+// Highlight model
+model Highlight {
+  id            String   @id @default(uuid())
+  userId        String
+  workId        String
+  chapterId     String?
+  selectedText  String
+  startPosition Int
+  endPosition   Int
+  color         String
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work  Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+  notes Note[]
+}
+
+// Note model
+model Note {
+  id          String   @id @default(uuid())
+  userId      String
+  workId      String
+  chapterId   String?
+  highlightId String?
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work      Work       @relation(fields: [workId], references: [id], onDelete: Cascade)
+  highlight Highlight? @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+}
+
+// Submission model
+model Submission {
+  id             String    @id @default(uuid())
+  creatorId      String
+  workId         String?
+  status         String    @default("submitted") // "submitted" | "under_review" | "approved" | "rejected" | "requested_changes"
+  moderatorId    String?
+  moderatorNotes String?
+  submittedAt    DateTime  @default(now())
+  reviewedAt     DateTime?
+  contentHash    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  creator   User  @relation("UserSubmissions", fields: [creatorId], references: [id], onDelete: Cascade)
+  work      Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+  moderator User? @relation("UserModeratedSubmissions", fields: [moderatorId], references: [id], onDelete: SetNull)
+}
+
+// Report model
+model Report {
+  id          String    @id @default(uuid())
+  reporterId  String
+  workId      String?
+  reviewId    String?
+  type        String // "copyright" | "inappropriate" | "spam" | "misleading_attribution" | "broken_content" | "abuse" | "other"
+  description String
+  status      String    @default("open") // "open" | "investigating" | "resolved" | "dismissed"
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  // Relations
+  reporter User    @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  work     Work?   @relation(fields: [workId], references: [id], onDelete: SetNull)
+  review   Review? @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+}
+
+// Transparency/disclosure for model tracking
+model ModelProfile {
+  id          String   @id @default(uuid())
+  name        String
+  provider    String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

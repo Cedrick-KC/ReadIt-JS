@@ -1,10 +1,50 @@
 {
-  "name": "readit-js",
+  "name": "readit-library",
   "version": "1.0.0",
-  "description": "ReadIt library management system built with JS",
-  "type": "module",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/app.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cedrick-KC/ReadIt-JS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Cedrick-KC/ReadIt-JS/issues"
+  },
+  "homepage": "https://github.com/Cedrick-KC/ReadIt-JS#readme",
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "lightningcss": "^1.33.0",
+    "lucide-react": "^1.52.0",
+    "next": "^16.3.8",
+    "prisma": "^7.10.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.4",
+    "@types/react": "19.3.0",
+    "@types/uuid": "^11.0.0",
+    "autoprefixer": "^10.6.1",
+    "lightningcss-linux-x64-gnu": "^1.32.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "typescript": "6.0.3"
   }
-  
 }
